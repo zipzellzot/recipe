@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>내 손안의 레시피</title>
+    <link rel="stylesheet" href="style.css">
+  
+</head>
+<body>
+    <h1>내 손안의 레시피</h1>
+    <p></p>
+    
+<script
+  src="https://code.jquery.com/jquery-3.6.1.js"
+  integrity="sha256-3zlB5s2uwoUzrXK3BT7AX3FyvojsraNFxCc2vC/7pNI="
+  crossorigin="anonymous">
+  </script>
+
+<div>Teachable Machine Image Model</div>
+<!-- 음식입력은 카메라가 켜짐+사과가 맞을시 food변수에 사과, start는 레시피 출력이고 이코드는 전복죽레시피  -->
+<button type="button" onclick="init5()">카메라</button>
+<button type="button" onclick="init()">업로드</button>
+<button type="button" onclick="init2()">레시피</button>
+
+<div id="webcam-container"></div>
+<div id="label-container"></div>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.3.1/dist/tf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8/dist/teachablemachine-image.min.js"></script>
+<script class="jsbin" src="https://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js"></script>
+<div class="file-upload">
+  <button class="file-upload-btn" type="button" onclick="$('.file-upload-input').trigger( 'click' )">Add Image</button>
+
+  <div class="image-upload-wrap">
+      <input class="file-upload-input" type='file' onchange="readURL(this);" accept="image/*" />
+      <div class="drag-text">
+          <h3>Drag and drop a file or select add Image</h3>
+      </div>
+  </div>
+  <div class="file-upload-content">
+      <img class="file-upload-image" id="face-image" src="#" alt="your image" />
+      <div class="image-title-wrap">
+          <button type="button" onclick="removeUpload()" class="remove-image">Remove
+              <span class="image-title">Uploaded Image</span>
+          </button>
+      </div>
+  </div>
+</div>
+<script>
+  function readURL(input) {
+      if (input.files && input.files[0]) {
+          var reader = new FileReader();
+          reader.onload = function(e) {
+              $('.image-upload-wrap').hide();
+              $('.file-upload-image').attr('src', e.target.result);
+              $('.file-upload-content').show();
+              $('.image-title').html(input.files[0].name);
+          };
+          reader.readAsDataURL(input.files[0]);
+      } else {
+          removeUpload();
+      }
+  }
+
+  function removeUpload() {
+      $('.file-upload-input').replaceWith($('.file-upload-input').clone());
+      $('.file-upload-content').hide();
+      $('.image-upload-wrap').show();
+  }
+  $('.image-upload-wrap').bind('dragover', function() {
+      $('.image-upload-wrap').addClass('image-dropping');
+  });
+  $('.image-upload-wrap').bind('dragleave', function() {
+      $('.image-upload-wrap').removeClass('image-dropping');
+  });
+</script>
+
+
+
+
+<script type="text/javascript">
+    // 여기부터 이미지 업로드
+    const URL = "https://teachablemachine.withgoogle.com/models/guRAYeo7C/";
+    
+
+    let model, webcam, labelContainer, maxPredictions;
+    var food="파프리카";
+    var food2="돼지고기";
+
+    // Load the image model and setup the webcam
+    async function init5() {
+        const modelURL = URL + "model.json";
+        const metadataURL = URL + "metadata.json";
+
+        model = await tmImage.load(modelURL, metadataURL);
+        maxPredictions = model.getTotalClasses();
+
+        const flip = true; // whether to flip the webcam
+        webcam = new tmImage.Webcam(200, 200, flip); // width, height, flip
+        await webcam.setup(); // request access to the webcam
+        await webcam.play();
+        window.requestAnimationFrame(loop);
+
+        document.getElementById("webcam-container").appendChild(webcam.canvas);
+        labelContainer = document.getElementById("label-container");
+        for (let i = 0; i < maxPredictions; i++) { // and class labels
+            labelContainer.appendChild(document.createElement("div"));
+        }
+        
+    }
+
+
+
+
+    async function init() {
+        const modelURL = URL + "model.json";
+        const metadataURL = URL + "metadata.json";
+
+        model = await tmImage.load(modelURL, metadataURL);
+        maxPredictions = model.getTotalClasses();
+
+        labelContainer = document.getElementById("label-container");
+            for (let i = 0; i < maxPredictions; i++) { // and class labels
+                labelContainer.appendChild(document.createElement("div"));
+            }
+
+        // append elements to the DOM
+        
+        labelContainer = document.getElementById("label-container");
+        for (let i = 0; i < maxPredictions; i++) { // and class labels
+            labelContainer.appendChild(document.createElement("div"));
+        }
+            var image = document.getElementById("face-image")
+        const prediction = await model.predict(image, false);
+        //카메라로 사과 입력 가능한 부분 원래 구글 티처블에는 없었음
+        if(prediction[0].className == "사과" && prediction[0].probability.toFixed(2)==1.00){
+            food="사과"
+            labelContainer.childNodes[0].innerHTML=food
+        } else if(prediction[1].className == "배" && prediction[1].probability.toFixed(2)==1.00){
+          food="배"
+          labelContainer.childNodes[0].innerHTML=food
+        }
+        else {
+            labelContainer.childNodes[0].innerHTML="모름"
+        }
+    }
+
+    async function loop() {
+        webcam.update(); // update the webcam frame
+        await predict();
+        window.requestAnimationFrame(loop);
+    }
+
+
+    async function predict() {
+        var image = document.getElementById("face-image")
+        const prediction = await model.predict(image, false);
+        //카메라로 사과 입력 가능한 부분 원래 구글 티처블에는 없었음
+        if(prediction[0].className == "사과" && prediction[0].probability.toFixed(2)==1.00){
+            food="사과"
+            labelContainer.childNodes[0].innerHTML=food
+        } else if(prediction[1].className == "배" && prediction[1].probability.toFixed(2)==1.00){
+          food="배"
+          labelContainer.childNodes[0].innerHTML=food
+        }
+        else {
+            labelContainer.childNodes[0].innerHTML="모름"
+        }
+        // 원래 구글티처블에 있던부분 숫자 바뀌는 곳
+        // for (let i = 0; i < ma   xPredictions; i++) {
+        //     const classPrediction =
+        //         prediction[i].className + ": " + prediction[i].probability.toFixed(2);
+        //     labelContainer.childNodes[i].innerHTML = classPrediction;
+        // }
+    }
+    async function init2() {$.ajax({
+    method: "GET",
+    url: "http://openapi.foodsafetykorea.go.kr/api/23fb53ff956b4e3ba8f4/COOKRCP01/json/1/50/RCP_PARTS_DTLS="+food+"&RCP_PARTS_DTLS="+food2,
+    // https://blogpack.tistory.com/962      (자바스크립트 서식문자 , 문자열 포매팅)
+  })
+    .done(function( msg ) {
+        //레시피 메인사진, 조리과정 및 사진, 재료
+        for (step = 0; step <= msg.COOKRCP01.total_count; step++ ) {
+            if (msg.COOKRCP01.row[step].RCP_PARTS_DTLS.includes(food) && msg.COOKRCP01.row[step].RCP_PARTS_DTLS.includes(food2)) {
+                console.log(msg.COOKRCP01.row[step].ATT_FILE_NO_MK);
+                $( "p" ).append( "<img src='"+msg.COOKRCP01.row[step].ATT_FILE_NO_MK+"'/>");
+                $( "p" ).append( "<strong>"+'<br>');
+                $( "p" ).append( "<strong>"+msg.COOKRCP01.row[step].RCP_NM+'<br>');
+                $( "p" ).append( "<img src='"+msg.COOKRCP01.row[step].MANUAL_IMG01+"'/>" );
+                $( "p" ).append( "<strong>"+msg.COOKRCP01.row[step].MANUAL01+'<br>');
+                $( "p" ).append( "<img src='"+msg.COOKRCP01.row[step].MANUAL_IMG02+"'/>" );
+                $( "p" ).append( "<strong>"+msg.COOKRCP01.row[step].MANUAL02+'<br>');
+                $( "p" ).append( "<img src='"+msg.COOKRCP01.row[step].MANUAL_IMG03+"'/>" );
+                $( "p" ).append( "<strong>"+msg.COOKRCP01.row[step].MANUAL03+'<br>');
+                $( "p" ).append( "<img src='"+msg.COOKRCP01.row[step].MANUAL_IMG04+"'/>" );
+                $( "p" ).append( "<strong>"+msg.COOKRCP01.row[step].MANUAL04+'<br>');
+                $( "p" ).append( "<img src='"+msg.COOKRCP01.row[step].MANUAL_IMG05+"'/>" );
+                $( "p" ).append( "<strong>"+msg.COOKRCP01.row[step].MANUAL05+'<br>');
+                $( "p" ).append( "<img src='"+msg.COOKRCP01.row[step].MANUAL_IMG06+"'/>" );
+                $( "p" ).append( "<strong>"+msg.COOKRCP01.row[step].MANUAL06+'<br>');
+                $( "p" ).append( "<img src='"+msg.COOKRCP01.row[step].MANUAL_IMG07+"'/>" );
+                $( "p" ).append( "<strong>"+msg.COOKRCP01.row[step].MANUAL07+'<br>');
+                $( "p" ).append( "<strong>"+"재료 : "+'<br>');
+                $( "p" ).append( "<strong>"+msg.COOKRCP01.row[step].RCP_PARTS_DTLS+'<br>');
+            }
+        }
+       
+        
+
+
+            //요리종류 확인
+
+    //         for (var step=0; step<msg.COOKRCP01.row.length; step++){
+    //             $( "p" ).append( "<strong>"+msg.COOKRCP01.row[step].RCP_NM+'<br>');   
+    //         }
+
+
+        console.log(msg);
+    });
+}
+</script>
+
+
+
+
+</body>
+</html> 
